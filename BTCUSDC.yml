@@ -1,0 +1,64 @@
+info:
+  name: BTCUSDC
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: https://api.binance.com/api/v3/ticker/price?symbol={{ticker}}
+  params:
+    - name: symbol
+      value: "{{ticker}}"
+      type: query
+  body:
+    type: json
+    data: ""
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: bru.setVar("ticker","BTCUSDC");
+    - type: tests
+      code: |-
+        const json = res.getBody();
+
+
+        test("Status 200", () => {
+          expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response is JSON", function() {
+        expect(res.getHeader("content-type")).to.contain("application/json");
+        });
+
+        test("Response time is under 3s",function() {
+            expect(res.getResponseTime()).to.be.below(3000);
+            });
+
+        test("Ticker exists", () => {
+          expect(json.symbol).to.exist;
+        });
+
+        test("Ticker matches variable", () => {
+          expect(json.symbol).to.equal(bru.getVar("ticker"));
+        });
+
+        test("Price is a valid positive number", () => {
+          const json = res.getBody();
+          const price = parseFloat(json.price);
+
+          expect(isNaN(price)).to.equal(false);
+          expect(price).to.be.above(0);
+        });
+
+        test("Currency exists", () => {
+          expect(json.symbol).to.exist;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
